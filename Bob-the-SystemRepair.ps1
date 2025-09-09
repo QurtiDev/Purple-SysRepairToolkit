@@ -214,7 +214,7 @@ if ($problemDevices) {
     Write-Host "No devices with errors found." -ForegroundColor Green
 }
 
-# Network Stack Reset
+# Network Stack Reset!
 Write-Host "`n[Resetting TCP/IP and Winsock]" -ForegroundColor Cyan
 netsh int ip reset | Out-Null
 netsh winsock reset | Out-Null
@@ -224,14 +224,7 @@ Write-Host "`n[Flushing DNS Cache]" -ForegroundColor Cyan
 ipconfig /flushdns | Out-Null
 Write-Host "DNS cache flushed." -ForegroundColor Green
 
-# Pending Reboots 
-Write-Host "`n[Checking Pending Reboots]" -ForegroundColor Cyan
-$pendingReboot = Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending"
-if ($pendingReboot) {
-    Write-Host "Pending reboot detected. Restart your computer soon." -ForegroundColor Red
-} else {
-    Write-Host "No pending reboots detected." -ForegroundColor Green
-}
+
 
 # WMI Repository 
 Write-Host "`n[Let's Verify WMI Repository]" -ForegroundColor Cyan
@@ -298,6 +291,32 @@ Get-Process | Sort-Object CPU -Descending | Select-Object -First 10 | ForEach-Ob
         Write-Host "$($_.Name): CPU $($_.CPU), WorkingSet $($_.WorkingSet)" -ForegroundColor Cyan
     }
 }
-Write-Host "`n Bob Finished the Scan! Review the log for full info, it's saved in desktop as previously stated!" -ForegroundColor Green
+
+# Pending Reboots 
+Write-Host "`n[Checking Pending Reboots]" -ForegroundColor Cyan
+$pendingReboot = Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending" -or Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update\RebootRequired"
+
+# for CHKDSK checking, this will be set to true if user wants 
+$chkdskScheduled = $false
+
+if ($pendingReboot -or $chkdskScheduled) {
+    Write-Host "`n[Pending Reboot Detected]" -ForegroundColor Cyan
+    Write-Host "A restart is required to complete repairs (e.g., CHKDSK, pending updates, or image fixes)." -ForegroundColor Yellow
+    Write-Host "Without restarting, some changes may not take effect!" -ForegroundColor Red
+
+    # Let's ask the user before acting :)
+    $response = Read-Host "Should you restart now? (Y/N)"
+    if ($response -eq 'Y' -or $response -eq 'y') {
+        Write-Host "Yes sir, restarting in 30 seconds... Save your work!" -ForegroundColor DarkYellow
+        Start-Sleep -Seconds 30
+        Restart-Computer -Force
+    } else {
+        Write-Host "IMPORTANT: Please restart manually as soon as possible!" -ForegroundColor Yellow
+    }
+} else {
+    Write-Host "`nNo immediate reboot required, but you should consider restarting to fully apply changes!" -ForegroundColor Green
+}
+
+Write-Host "`n Bob Finished the Scan! Review the log for full info, it's saved in $logPath as previously stated!" -ForegroundColor Green
 Stop-Transcript | Out-Null
 pause
