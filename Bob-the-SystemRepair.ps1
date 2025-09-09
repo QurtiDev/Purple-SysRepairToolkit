@@ -238,12 +238,33 @@ Write-Host "`n[Let's Verify WMI Repository]" -ForegroundColor Cyan
 winmgmt /verifyrepository
 Write-Host "If inconsistencies were found you should run 'winmgmt /salvagerepository' manually." -ForegroundColor Yellow
 
-#Clean Temp Files, just in case, basically files older than 2 days will be removed
-Write-Host "`n[Cleaning Temporary Files]" -ForegroundColor Cyan
-$cutoff = (Get-Date).AddDays(-2)
-Get-ChildItem $env:TEMP -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -lt $cutoff } | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue
-Get-ChildItem "C:\Windows\Temp" -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -lt $cutoff } | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue
+Write-Host "`n[Attempting To Clean Temporary Files]" -ForegroundColor Cyan
+Write-Host "[WARNING] The files skipped could be possibly malicious! (This is purely to avoid causing problems with currently running programs)" -ForegroundColor Yellow
+
+# Sets the x days of old files that will be cleaned from temp
+$cutoff = (Get-Date).AddDays(-7)
+
+# Safe way to check if the file is currently in use to avoid causing problems :)
+function SafeRemove-Item {
+    param ($Item)
+    try {
+        Remove-Item $Item.FullName -Force -Recurse -ErrorAction Stop
+    } catch {
+        Write-Host "We've skipped in-use or protected files, you should check these: $($Item.FullName)" -ForegroundColor Yellow
+    }
+}
+
+# Do the temp folder cleaning for the users file!
+Get-ChildItem $env:TEMP -Recurse -ErrorAction SilentlyContinue |
+    Where-Object { $_.LastWriteTime -lt $cutoff } |
+    ForEach-Object { SafeRemove-Item $_ }
+
+# Clean Windows temp folder!
+Get-ChildItem "C:\Windows\Temp" -Recurse -ErrorAction SilentlyContinue |
+    Where-Object { $_.LastWriteTime -lt $cutoff } |
+    ForEach-Object { SafeRemove-Item $_ }
 Write-Host "Old temporary files cleaned up!" -ForegroundColor Green
+
 
 #User Profiles 
 Write-Host "`n[Checking User Profiles]" -ForegroundColor Cyan
