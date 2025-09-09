@@ -71,7 +71,9 @@ if (-not $runFound) { Write-Host "No Run or RunOnce entries found." -ForegroundC
 Write-Host "`n[Scheduled Tasks]" -ForegroundColor Cyan
 $tasks = schtasks /query /fo CSV | ConvertFrom-Csv | Where-Object { $_."TaskName" -notlike "*Microsoft*" }
 if ($tasks) { $tasks | ForEach-Object { Write-Host $_.TaskName -ForegroundColor Red } }
-else { Write-Host "No non-Microsoft scheduled tasks found this time!" -ForegroundColor Green }
+else {
+Write-Host "No non-Microsoft scheduled tasks found this time!" -ForegroundColor Green
+}
 
 # WMI Consumers 
 Write-Host "`n[WMI Event Consumers]" -ForegroundColor Cyan
@@ -112,7 +114,9 @@ Get-ChildItem "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Exe
     $debugger = Get-RegistryValueSafe $_.PSPath "Debugger"
     if ($debugger) { Write-Host "$($_.PSPath): $($debugger.Debugger)" -ForegroundColor Red; $ifeoFound = $true }
 }
-if (-not $ifeoFound) { Write-Host "No IFEO debugger entries found." -ForegroundColor Green }
+if (-not $ifeoFound) {
+Write-Host "No IFEO debugger entries found." -ForegroundColor Green 
+}
 
 # AppInit DLLs quickly
 Write-Host "`n[AppInit_DLLs]" -ForegroundColor Cyan
