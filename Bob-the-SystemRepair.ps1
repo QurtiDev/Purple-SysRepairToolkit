@@ -1,12 +1,23 @@
 # Bob-the-SystemRepair, simple but pretty good powershell script for a full system scan and repair :3
 # IMPORTANT: Although everything from the powershell output that is displayed in the PowerShell console should be saved in BobScans.log, results of stuff like Defender full scan and MRT are not in this log file :( .. 
+# Script is not signed so this is required: Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+
 $logPath = "$env:USERPROFILE\Desktop\BobScans.log"
 Start-Transcript -Path $logPath -Force | Out-Null
+
+# Make sure bob has Administrator access, as otherwise some scans will fail..
+if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]"Administrator")){
+Write-Host "[!] ERROR: This script requires to be run as an Administrator due to the deep level scan it does. [!]" -ForegroundColor DarkRed    
+pause
+exit
+}
+
 
 Write-Host "Bob-the-SystemRepair Scan" -ForegroundColor Green
 Write-Host "IMPORTANT:" -ForegroundColor Green
 Write-Host "! Anything in RED is worth investigating! Do not ignore them by default THEY CAN BE BAD, but also don't blindly believe them!" -ForegroundColor Green
-Write-Host "Results are also saved to: $logPath" -ForegroundColor Cyan
+Write-Host "Results are also saved to: $logPath" -ForegroundColor DarkMagenta
 
 
 # Helper func to make it all easier
