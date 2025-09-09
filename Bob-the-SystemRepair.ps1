@@ -29,7 +29,7 @@ function Get-RegistryValueSafe {
     } catch { return $null }
 }
 
-#Startup Folder checks!!!
+# Startup Folder checks!!!
 Write-Host "`n[Startup Folders]" -ForegroundColor Cyan
 $startupFolders = @(
     "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup",
@@ -47,7 +47,7 @@ foreach ($folder in $startupFolders) {
 }
 if (-not $startupFound) { Write-Host "No startup folder files found." -ForegroundColor Green }
 
-#Registry Run Keys 
+# Registry Run Keys 
 Write-Host "`n[Registry Run/RunOnce Keys]" -ForegroundColor Cyan
 $runKeys = @(
     "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run",
@@ -67,19 +67,19 @@ foreach ($key in $runKeys) {
 }
 if (-not $runFound) { Write-Host "No Run or RunOnce entries found." -ForegroundColor Green }
 
-#Scheduled Tasks 
+# Scheduled Tasks 
 Write-Host "`n[Scheduled Tasks]" -ForegroundColor Cyan
 $tasks = schtasks /query /fo CSV | ConvertFrom-Csv | Where-Object { $_."TaskName" -notlike "*Microsoft*" }
 if ($tasks) { $tasks | ForEach-Object { Write-Host $_.TaskName -ForegroundColor Red } }
 else { Write-Host "No non-Microsoft scheduled tasks found this time!" -ForegroundColor Green }
 
-#WMI Consumers 
+# WMI Consumers 
 Write-Host "`n[WMI Event Consumers]" -ForegroundColor Cyan
 $wmiConsumers = Get-CimInstance -Namespace root\subscription -ClassName __EventConsumer -ErrorAction SilentlyContinue
 if ($wmiConsumers) { $wmiConsumers | ForEach-Object { Write-Host $_.Name -ForegroundColor Red } }
 else { Write-Host "No WMI event consumers found." -ForegroundColor Green }
 
-#Services 
+# Services 
 Write-Host "`n[Services]" -ForegroundColor Cyan
 $services = Get-CimInstance Win32_Service | Where-Object { $_.PathName -and $_.PathName -notmatch "Windows|Program Files|System32|SysWOW64" }
 if ($services) {
@@ -88,7 +88,7 @@ if ($services) {
 }
 else { Write-Host "No unusual services found." -ForegroundColor Green }
 
-#Winlogon Keys 
+# Winlogon Keys 
 Write-Host "`n[Winlogon Keys]" -ForegroundColor Cyan
 $winlogonKeys = @(
     "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Userinit",
@@ -105,7 +105,7 @@ foreach ($key in $winlogonKeys) {
     }
 }
 
-#IFEO Hijacks, rare but sometimes we get hits
+# IFEO Hijacks, rare but sometimes we get hits
 Write-Host "`n[IFEO Debugger Hijacks!]" -ForegroundColor Cyan
 $ifeoFound = $false
 Get-ChildItem "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options" | ForEach-Object {
@@ -114,13 +114,13 @@ Get-ChildItem "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Exe
 }
 if (-not $ifeoFound) { Write-Host "No IFEO debugger entries found." -ForegroundColor Green }
 
-#AppInit DLLs quickly
+# AppInit DLLs quickly
 Write-Host "`n[AppInit_DLLs]" -ForegroundColor Cyan
 $appInit = Get-RegistryValueSafe "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Windows" "AppInit_DLLs"
 if ($appInit -and $appInit.AppInit_DLLs) { Write-Host "AppInit_DLLs: $($appInit.AppInit_DLLs)" -ForegroundColor Red }
 else { Write-Host "No AppInit_DLLs found." -ForegroundColor Green }
 
-#Kinda suspicious files, can cause false positives, don't blatantly believe
+# Kinda suspicious files, can cause false positives, don't blatantly believe
 Write-Host "`n[Suspicious File Extensions in System Directories]" -ForegroundColor Cyan
 $systemDirs = @("C:\Windows", "C:\Windows\System32")
 $suspFiles = $false
@@ -131,31 +131,31 @@ foreach ($dir in $systemDirs) {
 }
 if (-not $suspFiles) { Write-Host "No suspicious files found in system directories." -ForegroundColor Green }
 
-#Network Listeners 
+# Network Listeners 
 Write-Host "`n[Active Network Listeners]" -ForegroundColor Cyan
 $listeners = netstat -ano | Select-String "LISTENING"
 if ($listeners) { $listeners | ForEach-Object { Write-Host $_ -ForegroundColor Red } }
 else { Write-Host "No active network listeners found." -ForegroundColor Green }
 
-#Shell Extensions 
+# Shell Extensions 
 Write-Host "`n[Shell Extensions]" -ForegroundColor Cyan
 $shellExt = Get-RegistryValueSafe "HKLM:\Software\Microsoft\Windows\CurrentVersion\Shell Extensions\Approved"
 if ($shellExt) { $shellExt.PSObject.Properties | Where-Object { $_.Value } | ForEach-Object { Write-Host "$($_.Name): $($_.Value)" -ForegroundColor Red } }
 else { Write-Host "No shell extensions found." -ForegroundColor Green }
 
-#Browser Helper Objects 
+# Browser Helper Objects 
 Write-Host "`n[Browser Helper Objects!]" -ForegroundColor Cyan
 $bho = Get-RegistryValueSafe "HKLM:\Software\Microsoft\Windows\CurrentVersion\Explorer\Browser Helper Objects"
 if ($bho) { $bho.PSObject.Properties | Where-Object { $_.Value } | ForEach-Object { Write-Host "$($_.Name): $($_.Value)" -ForegroundColor Red } }
 else { Write-Host "No browser helper objects found this time." -ForegroundColor Green }
 
-#Boot Execute Entries 
+# Boot Execute Entries 
 Write-Host "`n[Boot Execute Entries]" -ForegroundColor Cyan
 $bootExec = Get-RegistryValueSafe "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager" "BootExecute"
 if ($bootExec -and $bootExec.BootExecute) { Write-Host "BootExecute: $($bootExec.BootExecute)" -ForegroundColor Red }
 else { Write-Host "No BootExecute entries found, hmm." -ForegroundColor Green }
 
-#Hidden Files 
+# Hidden Files 
 Write-Host "`n[Hidden Files in Critical Directories]" -ForegroundColor Cyan
 $hiddenFiles = $false
 foreach ($dir in $systemDirs) {
@@ -164,7 +164,7 @@ foreach ($dir in $systemDirs) {
     }
 }
 if (-not $hiddenFiles) { Write-Host "No hidden files found in system directories, GOOD!." -ForegroundColor Green }
-#Defender +Quickie Repairs 
+# Defender +Quickie Repairs 
 Write-Host "`n[Updating Windows Defender Signatures]" -ForegroundColor Cyan
 Update-MpSignature | Out-Null
 Write-Host "Defender signatures updated." -ForegroundColor Green
@@ -194,7 +194,7 @@ Write-Host "`n[Running Microsoft Malicious Software Removal Tool (MRT) Quietly]"
 Start-Job { & "$env:SystemRoot\System32\MRT.exe" /Q }
 Write-Host "MRT scan running in background." -ForegroundColor Yellow
 
-#Running through Event Logs maybe we find sum
+# Running through Event Logs maybe we find sum
 Write-Host "`n[Checking Event Log for Shutdown Errors...]" -ForegroundColor Cyan
 $shutdownEvents = Get-WinEvent -LogName System -MaxEvents 200 | Where-Object { $_.Id -in 1074,6008,41 }
 if ($shutdownEvents) {
@@ -204,7 +204,7 @@ if ($shutdownEvents) {
     Write-Host "No recent shutdown-related errors found." -ForegroundColor Green
 }
 
-#Devices with Errors 
+# Devices with Errors 
 Write-Host "`n[Checking for Devices with Errors]" -ForegroundColor Cyan
 $problemDevices = Get-PnpDevice | Where-Object { $_.Status -eq 'Error' }
 if ($problemDevices) {
@@ -214,7 +214,7 @@ if ($problemDevices) {
     Write-Host "No devices with errors found." -ForegroundColor Green
 }
 
-#Network Stack Reset
+# Network Stack Reset
 Write-Host "`n[Resetting TCP/IP and Winsock]" -ForegroundColor Cyan
 netsh int ip reset | Out-Null
 netsh winsock reset | Out-Null
@@ -224,7 +224,7 @@ Write-Host "`n[Flushing DNS Cache]" -ForegroundColor Cyan
 ipconfig /flushdns | Out-Null
 Write-Host "DNS cache flushed." -ForegroundColor Green
 
-#Pending Reboots 
+# Pending Reboots 
 Write-Host "`n[Checking Pending Reboots]" -ForegroundColor Cyan
 $pendingReboot = Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending"
 if ($pendingReboot) {
@@ -233,7 +233,7 @@ if ($pendingReboot) {
     Write-Host "No pending reboots detected." -ForegroundColor Green
 }
 
-#WMI Repository 
+# WMI Repository 
 Write-Host "`n[Let's Verify WMI Repository]" -ForegroundColor Cyan
 winmgmt /verifyrepository
 Write-Host "If inconsistencies were found you should run 'winmgmt /salvagerepository' manually." -ForegroundColor Yellow
@@ -266,7 +266,7 @@ Get-ChildItem "C:\Windows\Temp" -Recurse -ErrorAction SilentlyContinue |
 Write-Host "Old temporary files cleaned up!" -ForegroundColor Green
 
 
-#User Profiles 
+# User Profiles 
 Write-Host "`n[Checking User Profiles]" -ForegroundColor Cyan
 $profiles = Get-CimInstance Win32_UserProfile | Where-Object { $_.Special -eq $false }
 $profileIssue = $false
@@ -279,7 +279,7 @@ foreach ($profile in $profiles) {
 }
 if (-not $profileIssue) { Write-Host "No user profile issues found." -ForegroundColor Green }
 
-#Disk Space 
+# Disk Space check
 Write-Host "`n[Hold on a minute, checking Disk Space on C:]" -ForegroundColor Cyan
 $diskSpace = Get-PSDrive C | Select-Object Used, Free
 Write-Host "Disk space: Used $([math]::Round($diskSpace.Used / 1GB,2)) GB, Free $([math]::Round($diskSpace.Free / 1GB,2)) GB" -ForegroundColor Cyan
@@ -289,7 +289,7 @@ if ($diskSpace.Free / 1GB -lt 10) {
     Write-Host "Decent disk space available(Rookie numbers tho)." -ForegroundColor Green
 }
 
-#Top CPU Processes !!!!
+# Top CPU Processes !!!!
 Write-Host "`n[Top 10 CPU Processes for Suspicious Activity! ]" -ForegroundColor Cyan
 Get-Process | Sort-Object CPU -Descending | Select-Object -First 10 | ForEach-Object {
     if ($_.CPU -gt 1000000) {
