@@ -18,7 +18,7 @@ Write-Host "Bob-the-SystemRepair Scan" -ForegroundColor Green
 Write-Host "IMPORTANT:" -ForegroundColor Green
 Write-Host "! Anything in RED is worth investigating! Do not ignore them by default THEY CAN BE BAD, but also don't blindly believe them!" -ForegroundColor Green
 Write-Host "Results are also saved to: $logPath" -ForegroundColor DarkMagenta
-
+Write-Host "DO NOT INTERRUPT THE SCAN, DOING SO MAY CAUSE PROBLEMS!" -ForegroundColor Yellow
 
 # Helper func to make it all easier
 function Get-RegistryValueSafe {
